@@ -1,0 +1,60 @@
+{
+  "name": "agent-trading-journal",
+  "version": "0.1.0",
+  "description": "An AI-agent-native trading journal: your agent (Claude Code, Codex, any MCP client) logs trades from chart screenshots, checks them against your own strategy rules, and a local dashboard shows the stats.",
+  "license": "MIT",
+  "author": "smizxe (https://github.com/smizxe)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smizxe/agent-trading-journal.git"
+  },
+  "homepage": "https://github.com/smizxe/agent-trading-journal#readme",
+  "bugs": {
+    "url": "https://github.com/smizxe/agent-trading-journal/issues"
+  },
+  "type": "module",
+  "bin": {
+    "agent-trading-journal": "bin/cli.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "public",
+    "presets",
+    "AGENTS.md",
+    "README.md",
+    "LICENSE",
+    "docs/ONBOARDING.md",
+    "docs/edge-score.md",
+    "README.vi.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "mcp": "node bin/cli.js mcp",
+    "start": "node bin/cli.js dashboard",
+    "demo": "node bin/cli.js demo",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "keywords": [
+    "trading-journal",
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "codex",
+    "ai-agent",
+    "backtesting",
+    "forex",
+    "prop-firm"
+  ],
+  "dependencies": {
+    "@hono/node-server": "^1.14.0",
+    "@luxalgo/journal-core": "^0.1.0",
+    "@luxalgo/journal-importers": "^0.1.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "better-sqlite3": "^12.11.0",
+    "hono": "^4.7.0",
+    "zod": "^3.24.0"
+  }
+}

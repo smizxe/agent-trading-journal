@@ -1,0 +1,1 @@
+`tradingview-sample.csv` contains the first 40 rows of `docs/samples/demo-trades-tradingview.csv` from [LuxAlgo/trade-journal](https://github.com/LuxAlgo/trade-journal) (MIT). It is synthetic data, not a real account.

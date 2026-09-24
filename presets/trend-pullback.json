@@ -1,0 +1,38 @@
+{
+  "slug": "trend-pullback",
+  "name": "Trend pullback (moving averages)",
+  "description": "Join an established trend on a pullback to a moving average or prior structure, entering on a continuation candle.",
+  "markets": "FX majors, indices, liquid stocks, crypto majors",
+  "timeframes": "H4 trend · H1 setup/entry",
+  "plan": {
+    "summary": "Trends persist more often than they reverse; pullbacks give a better price with a tight stop.",
+    "bias": "Price above a rising 50 EMA for longs (below a falling one for shorts); higher highs and higher lows.",
+    "setup": "A pullback into the 20/50 EMA zone or a prior breakout level.",
+    "entry": "Close of a continuation candle (engulfing / pin bar) back in the trend direction.",
+    "stop": "Below the pullback low (above the high for shorts).",
+    "targets": "Previous swing extreme, or 2R.",
+    "management": "Move to breakeven after 1R.",
+    "no_trade": "Flat EMAs / ranging market; less than 30 minutes before high-impact news."
+  },
+  "fields": [
+    { "key": "pullback_to", "label": "Pullback to", "type": "enum", "options": [
+      { "value": "ema20", "label": "20 EMA" }, { "value": "ema50", "label": "50 EMA" },
+      { "value": "structure", "label": "Prior structure" }, { "value": "other", "label": "Other" }],
+      "guide": "The level price reacted from." },
+    { "key": "trigger", "label": "Entry trigger", "type": "enum", "options": [
+      { "value": "engulfing", "label": "Engulfing" }, { "value": "pin_bar", "label": "Pin bar" },
+      { "value": "break_of_high", "label": "Break of candle high/low" }] },
+    { "key": "trend_strength", "label": "Trend strength", "type": "enum", "options": [
+      { "value": "strong", "label": "Strong (clean HH/HL)" }, { "value": "moderate", "label": "Moderate" }, { "value": "weak", "label": "Weak / choppy" }],
+      "guide": "Read from swing structure on the trend timeframe." },
+    { "key": "pullback_depth_pct", "label": "Pullback depth (% of last leg)", "type": "number",
+      "guide": "Retracement of the last impulse leg, 0–1 (0.5 = 50%).", "breakdown": true }
+  ],
+  "rules": [
+    { "key": "trend_defined", "text": "Clear trend on the higher timeframe", "severity": "must" },
+    { "key": "with_trend", "text": "Trade direction matches the trend", "severity": "must" },
+    { "key": "trigger_closed", "text": "Entry only after the trigger candle closed", "severity": "must" },
+    { "key": "min_rr", "text": "Planned RR ≥ 1.5", "severity": "must" },
+    { "key": "no_news", "text": "No high-impact news within 30 minutes", "guide": "Ask the user.", "severity": "should" }
+  ]
+}

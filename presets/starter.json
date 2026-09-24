@@ -1,0 +1,36 @@
+{
+  "slug": "starter",
+  "name": "Starter (no defined strategy yet)",
+  "description": "For traders who haven't written their strategy down yet: journal the basics, then promote what matters into fields and rules once patterns show up.",
+  "markets": "any",
+  "timeframes": "any",
+  "plan": {
+    "summary": "Log every trade and skipped setup honestly; let the data show which conditions matter.",
+    "bias": "Write down the direction you expect and why, before entering.",
+    "setup": "Name the setup type you believe you are taking.",
+    "entry": "Note the trigger that made you click.",
+    "stop": "Stop loss defined before entry.",
+    "targets": "Target defined before entry.",
+    "management": "Decide in advance whether you will move the stop or take partials.",
+    "no_trade": "Tired, tilted, or outside your usual hours."
+  },
+  "fields": [
+    { "key": "setup_type", "label": "Setup type", "type": "enum", "options": [
+      { "value": "breakout", "label": "Breakout" }, { "value": "pullback", "label": "Pullback" },
+      { "value": "reversal", "label": "Reversal" }, { "value": "range", "label": "Range" }, { "value": "other", "label": "Other" }],
+      "guide": "Ask the user if it's not obvious from the chart." },
+    { "key": "session", "label": "Session", "type": "enum", "options": [
+      { "value": "asia", "label": "Asia" }, { "value": "europe", "label": "Europe" }, { "value": "us", "label": "US" }],
+      "guide": "Market session of the entry, in the trader's timezone." },
+    { "key": "planned", "label": "Planned before the session", "type": "bool", "guide": "Ask the user: was this setup on your watchlist before the session started?" },
+    { "key": "emotion", "label": "State of mind", "type": "enum", "options": [
+      { "value": "calm", "label": "Calm" }, { "value": "fomo", "label": "FOMO" }, { "value": "revenge", "label": "Revenge" }, { "value": "bored", "label": "Bored" }],
+      "guide": "Ask the user." }
+  ],
+  "rules": [
+    { "key": "sl_before_entry", "text": "Stop loss set before entry", "severity": "must" },
+    { "key": "risk_ok", "text": "Risk within the account limit", "guide": "Ask the user or call check_risk.", "severity": "must" },
+    { "key": "min_rr", "text": "Planned RR ≥ 1.5", "severity": "should" },
+    { "key": "reason_written", "text": "Reason for the trade stated before entry", "severity": "should" }
+  ]
+}

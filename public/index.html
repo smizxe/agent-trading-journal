@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Trading Journal</title>
+<style>
+  :root {
+    --page: #f9f9f7; --surface: #fcfcfb; --surface-2: #f1f0ec;
+    --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --series: #2a78d6; --neg: #e34948; --warn: #b7791f;
+    --good-text: #006300; --bad-text: #d03b3b;
+    --cal-0: #ecebe6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321;
+      --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+      --series: #3987e5; --neg: #e66767; --warn: #e0a84a;
+      --good-text: #2fbf2f; --bad-text: #e66767;
+      --cal-0: #242422;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 18px 16px 60px; }
+  header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  h1 { font-size: 18px; margin: 0; }
+  h1 small { color: var(--muted); font-weight: 500; font-size: 12px; margin-left: 6px; }
+  nav { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tab { background: var(--surface); color: var(--ink-2); border: 1px solid var(--border); border-radius: 99px; padding: 6px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+  .tab.active { color: var(--ink); border-color: var(--series); box-shadow: inset 0 0 0 1px var(--series); }
+  .tab.small { padding: 6px 11px; font-size: 12px; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .filters label { font-size: 11px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+  select, input[type=date] { background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; font: inherit; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 14px; min-width: 0; }
+  .card h2 { font-size: 13px; margin: 0 0 12px; color: var(--ink-2); font-weight: 600; }
+  .card h2 .hint { color: var(--muted); font-weight: 400; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .tile .label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .tile .value { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .tile .sub { font-size: 11px; color: var(--ink-2); margin-top: 2px; }
+  .pos { color: var(--good-text); } .negv { color: var(--bad-text); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .grid2 > .card { margin-bottom: 0; } .grid2 { margin-bottom: 14px; }
+  .chart-box { position: relative; }
+  .tooltip { position: absolute; pointer-events: none; display: none; z-index: 5; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); white-space: nowrap; }
+  svg text { fill: var(--muted); font: 11px system-ui, sans-serif; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 600; font-size: 11px; padding: 6px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  td { padding: 7px 8px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  tr.click { cursor: pointer; } tr.click:hover { background: color-mix(in srgb, var(--series) 7%, transparent); }
+  tr.sel { background: color-mix(in srgb, var(--series) 14%, transparent); }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); white-space: nowrap; }
+  .b-win { color: var(--good-text); } .b-loss { color: var(--bad-text); } .b-be, .b-skip { color: var(--muted); }
+  .b-pass { color: var(--good-text); } .b-fail { color: var(--bad-text); } .b-na { color: var(--muted); }
+  .b-must { color: var(--ink); } .b-should { color: var(--muted); }
+  .empty { color: var(--muted); text-align: center; padding: 26px 0; }
+  .kv { display: grid; grid-template-columns: 150px 1fr; gap: 3px 10px; font-size: 13px; margin: 0; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; overflow-wrap: anywhere; }
+  #detail img { max-width: 100%; border-radius: 8px; border: 1px solid var(--border); margin-top: 8px; }
+  .lesson { border-left: 3px solid var(--series); padding: 4px 10px; margin: 8px 0; font-size: 13px; }
+  .lesson .meta { color: var(--muted); font-size: 11px; }
+  .table-scroll { overflow-x: auto; }
+  .bar-row { display: grid; grid-template-columns: minmax(70px, 120px) 1fr 150px; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; }
+  .bar-row .lbl { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-row .val { color: var(--ink-2); text-align: right; font-variant-numeric: tabular-nums; font-size: 11px; white-space: nowrap; }
+  .track { height: 10px; background: color-mix(in srgb, var(--grid) 60%, transparent); border-radius: 5px; overflow: hidden; }
+  .crumb { color: var(--muted); font-size: 12px; margin-bottom: 10px; }
+  .crumb a, a.link { color: var(--series); cursor: pointer; text-decoration: none; }
+  .alert { border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; border: 1px solid var(--border); font-size: 13px; }
+  .alert.ok { background: color-mix(in srgb, var(--good-text) 8%, var(--surface)); }
+  .alert.caution { background: color-mix(in srgb, var(--warn) 14%, var(--surface)); }
+  .alert.stop { background: color-mix(in srgb, var(--bad-text) 14%, var(--surface)); }
+  .alert b { margin-right: 6px; }
+  .cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .cmp > div { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
+  .cmp .big { font-size: 20px; font-weight: 650; }
+  .rule-row { display: grid; grid-template-columns: 1fr 110px 120px; gap: 8px; align-items: center; font-size: 12px; padding: 6px 0; border-bottom: 1px solid var(--grid); }
+  .rule-row:last-child { border-bottom: 0; }
+  .rule-row .muted { color: var(--muted); font-size: 11px; }
+  .cal { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 14px); gap: 3px; overflow-x: auto; padding-bottom: 4px; }
+  .cal div { width: 14px; height: 14px; border-radius: 3px; background: var(--cal-0); }
+  .legend { display: flex; gap: 12px; font-size: 11px; color: var(--muted); margin-top: 8px; flex-wrap: wrap; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; background: var(--c); }
+  .strategy-card h3 { margin: 0 0 4px; font-size: 16px; }
+  .strategy-card .desc { color: var(--ink-2); margin: 0 0 10px; }
+  .muted { color: var(--muted); }
+  .onboard { text-align: center; padding: 40px 16px; }
+  .onboard code { background: var(--surface-2); padding: 2px 6px; border-radius: 6px; }
+  .edge-dl { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 12px; margin-top: 6px; }
+  @media (max-width: 560px) {
+    .bar-row { grid-template-columns: 80px 1fr; } .bar-row .val { grid-column: 1 / -1; text-align: left; }
+    .rule-row { grid-template-columns: 1fr; } .kv { grid-template-columns: 110px 1fr; } .cmp { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📓 Agent Trading Journal<small id="profile-line"></small></h1>
+    <nav>
+      <button class="tab" data-view="overview"></button>
+      <button class="tab" data-view="sessions"></button>
+      <button class="tab" data-view="strategies"></button>
+      <button class="tab small" id="lang-btn"></button>
+    </nav>
+  </header>
+  <main id="app"></main>
+</div>
+
+<script>
+// ------------------------------------------------------------------ utils & i18n
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmtR = (r) => r === null || r === undefined ? '—' : (r > 0 ? '+' : '') + r;
+const cls = (x) => x > 0 ? 'pos' : x < 0 ? 'negv' : '';
+const api = (p) => fetch(p).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error || r.statusText); return j; });
+
+const I18N = {
+  en: {
+    overview: 'Overview', sessions: 'Sessions', strategies: 'Strategies', switchTo: 'VI',
+    all: 'All', mode: 'Mode', account: 'Account', strategy: 'Strategy', symbol: 'Symbol', from: 'From', to: 'To',
+    backtest: 'Backtest', forward: 'Forward', live: 'Live',
+    closed: 'Closed trades', winRate: 'Win rate', totalR: 'Total R', expectancy: 'Expectancy', pf: 'Profit factor', maxDD: 'Max drawdown',
+    edge: 'Edge Score', skipped: 'Skipped setups', open: 'open', perTrade: 'avg R / trade', notReviewed: 'not reviewed',
+    skipReview: (a, b) => `reviewed: ${a} right · ${b} wrong`, edgeWithheld: 'needs ≥ 5 trades', missingR: (n) => `${n} without R`,
+    equity: 'Equity curve', equityHint: '(cumulative R, closed trades)', noClosed: 'No closed trades in this scope yet.',
+    tradeN: (n) => `trade 1 → ${n}`, calendar: 'Daily R', calHint: '(each square = a day)', calLess: 'loss day', calMore: 'win day', calNone: 'no trades',
+    rules: 'Rule adherence', rulesHint: '(must-rules)', followed: 'All must-rules followed', broken: 'At least one broken',
+    trades: (n) => `${n} trade${n === 1 ? '' : 's'}`, passRate: 'pass rate', eWhenPass: 'E[R] pass', eWhenFail: 'E[R] fail',
+    noRules: 'No rule checks logged yet. Ask your agent to check each rule when it logs a trade.',
+    byDirection: 'By direction', byWeekday: 'By weekday', byHour: 'By hour', bySymbol: 'By symbol', noData: 'No data yet',
+    tradesTitle: 'Trades', tradesHint: '(click a row)', noTrades: 'No trades yet.',
+    colSession: 'Session/#', colTime: 'Time', colSide: 'Side', colResult: 'Result', colRules: 'Rules',
+    skippedBadge: 'SKIPPED', openBadge: 'OPEN',
+    detail: (sid, no, sym) => `Trade ${sid}/#${no} · ${sym}`, status: 'Status', skippedPrefix: 'Skipped — ',
+    prices: 'Prices', result: 'Result', exitReason: 'Exit', mistakes: 'Mistakes', notes: 'Notes', tags: 'Tags', source: 'Source',
+    ruleChecks: 'Rule checks', lessons: 'Lessons', noLessons: 'No lessons in this scope yet.', excursion: 'MAE / MFE',
+    movedBe: 'moved to BE', partial: 'partial taken',
+    riskTitle: (a) => `Risk guard · ${a}`, riskToday: (r, p) => `Today ${fmtR(r)}R${p !== null ? ` (${fmtR(p)}%)` : ''}`,
+    riskStatus: { ok: 'OK', caution: 'CAUTION', stop: 'STOP' },
+    targetProgress: (p) => `profit target ${p}% reached`,
+    sessionList: 'Sessions', colDate: 'Date', colMode: 'Mode', colTrades: 'Trades', noSessions: 'No sessions yet.',
+    back: '← Sessions', range: 'Data range', timeframes: 'Timeframes', tool: 'Tool / indicator',
+    plan: 'Plan', fields: 'Fields (measured per trade)', rulesList: 'Rules (entry checklist)', version: 'version',
+    viewTrades: 'View trades →', required: 'required', noStrategies: 'No strategy yet.',
+    onboardTitle: 'Let your agent set this journal up for you',
+    onboardText: 'Open Claude Code, Codex or any MCP client connected to this journal and say:',
+    onboardSay: '“Set up my trading journal.”',
+    onboardAfter: 'It will ask about your markets, risk rules and strategy, then build the fields and checklist this dashboard uses.',
+    onboardDemo: 'Just looking? Run <code>npx agent-trading-journal demo</code> for a filled example.',
+    planKeys: { summary: 'Summary', bias: 'Bias', setup: 'Setup', entry: 'Entry', stop: 'Stop', targets: 'Targets', management: 'Management', no_trade: 'No-trade' },
+    weekdays: { Sun: 'Sun', Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 'Thu', Fri: 'Fri', Sat: 'Sat' },
+    yes: 'yes', no: 'no', unset: '(unset)',
+  },
+  vi: {
+    overview: 'Tổng quan', sessions: 'Phiên', strategies: 'Chiến lược', switchTo: 'EN',
+    all: 'Tất cả', mode: 'Chế độ', account: 'Tài khoản', strategy: 'Chiến lược', symbol: 'Symbol', from: 'Từ', to: 'Đến',
+    backtest: 'Backtest', forward: 'Forward', live: 'Live',
+    closed: 'Lệnh đã đóng', winRate: 'Win rate', totalR: 'Tổng R', expectancy: 'Expectancy', pf: 'Profit factor', maxDD: 'Max drawdown',
+    edge: 'Edge Score', skipped: 'Kèo đứng ngoài', open: 'đang mở', perTrade: 'R trung bình / lệnh', notReviewed: 'chưa review',
+    skipReview: (a, b) => `review: ${a} đúng · ${b} sai`, edgeWithheld: 'cần ≥ 5 lệnh', missingR: (n) => `${n} lệnh chưa có R`,
+    equity: 'Equity curve', equityHint: '(R cộng dồn, lệnh đã đóng)', noClosed: 'Chưa có lệnh đã đóng trong phạm vi này.',
+    tradeN: (n) => `lệnh 1 → ${n}`, calendar: 'R theo ngày', calHint: '(mỗi ô = 1 ngày)', calLess: 'ngày lỗ', calMore: 'ngày lời', calNone: 'không có lệnh',
+    rules: 'Tuân thủ rule', rulesHint: '(rule bắt buộc)', followed: 'Theo đủ rule bắt buộc', broken: 'Phá ít nhất 1 rule',
+    trades: (n) => `${n} lệnh`, passRate: 'tỷ lệ đạt', eWhenPass: 'E[R] khi đạt', eWhenFail: 'E[R] khi phá',
+    noRules: 'Chưa có lệnh nào được chấm rule. Bảo agent chấm từng rule khi ghi lệnh.',
+    byDirection: 'Theo chiều', byWeekday: 'Theo thứ', byHour: 'Theo giờ', bySymbol: 'Theo symbol', noData: 'Chưa có dữ liệu',
+    tradesTitle: 'Danh sách lệnh', tradesHint: '(bấm vào 1 dòng)', noTrades: 'Chưa có lệnh nào.',
+    colSession: 'Phiên/#', colTime: 'Thời điểm', colSide: 'Chiều', colResult: 'Kết quả', colRules: 'Rule',
+    skippedBadge: 'BỎ QUA', openBadge: 'MỞ',
+    detail: (sid, no, sym) => `Lệnh ${sid}/#${no} · ${sym}`, status: 'Trạng thái', skippedPrefix: 'Đứng ngoài — ',
+    prices: 'Giá', result: 'Kết quả', exitReason: 'Thoát lệnh', mistakes: 'Lỗi', notes: 'Ghi chú', tags: 'Tags', source: 'Nguồn',
+    ruleChecks: 'Chấm rule', lessons: 'Bài học', noLessons: 'Chưa có bài học nào trong phạm vi này.', excursion: 'MAE / MFE',
+    movedBe: 'đã dời BE', partial: 'đã chốt một phần',
+    riskTitle: (a) => `Canh rủi ro · ${a}`, riskToday: (r, p) => `Hôm nay ${fmtR(r)}R${p !== null ? ` (${fmtR(p)}%)` : ''}`,
+    riskStatus: { ok: 'ỔN', caution: 'CẨN THẬN', stop: 'DỪNG' },
+    targetProgress: (p) => `đạt ${p}% mục tiêu lợi nhuận`,
+    sessionList: 'Các phiên', colDate: 'Ngày', colMode: 'Chế độ', colTrades: 'Lệnh', noSessions: 'Chưa có phiên nào.',
+    back: '← Các phiên', range: 'Đoạn dữ liệu', timeframes: 'Khung thời gian', tool: 'Tool / indicator',
+    plan: 'Kế hoạch', fields: 'Field (đo trên từng lệnh)', rulesList: 'Rule (checklist vào lệnh)', version: 'phiên bản',
+    viewTrades: 'Xem lệnh →', required: 'bắt buộc', noStrategies: 'Chưa có chiến lược.',
+    onboardTitle: 'Để agent dựng journal này theo cách bạn trade',
+    onboardText: 'Mở Claude Code, Codex hoặc MCP client đã kết nối journal này và nói:',
+    onboardSay: '“Setup trading journal cho tôi.”',
+    onboardAfter: 'Agent sẽ hỏi về thị trường, luật rủi ro và chiến lược của bạn, rồi tạo các field và checklist mà dashboard này dùng.',
+    onboardDemo: 'Chỉ muốn xem thử? Chạy <code>npx agent-trading-journal demo</code> để có dữ liệu mẫu.',
+    planKeys: { summary: 'Tóm tắt', bias: 'Xu hướng', setup: 'Setup', entry: 'Vào lệnh', stop: 'Stop loss', targets: 'Chốt lời', management: 'Quản lý lệnh', no_trade: 'Không trade khi' },
+    weekdays: { Sun: 'CN', Mon: 'T2', Tue: 'T3', Wed: 'T4', Thu: 'T5', Fri: 'T6', Sat: 'T7' },
+    yes: 'có', no: 'không', unset: '(chưa rõ)',
+  },
+};
+let lang = (() => {
+  try { const v = localStorage.getItem('atj-lang'); if (v === 'en' || v === 'vi') return v; } catch {}
+  return (navigator.language || '').toLowerCase().startsWith('vi') ? 'vi' : 'en';
+})();
+const t = (k, ...a) => { const v = I18N[lang][k]; return typeof v === 'function' ? v(...a) : v; };
+const outcomeBadge = (tr) => tr.status === 'skipped'
+  ? `<span class="badge b-skip">${t('skippedBadge')}${tr.skip_correct === 1 ? ' ✓' : tr.skip_correct === 0 ? ' ✗' : ''}</span>`
+  : tr.outcome ? `<span class="badge b-${tr.outcome}">${tr.outcome.toUpperCase()}</span>` : `<span class="badge">${t('openBadge')}</span>`;
+
+// ------------------------------------------------------------------ state & routing
+let meta = null;
+const strategyBySlug = (slug) => meta.strategies.find(s => s.slug === slug);
+function fieldLabel(key) {
+  for (const s of meta.strategies) { const f = s.fields.find(x => x.key === key); if (f) return f; }
+  return { key, label: key, type: 'text' };
+}
+function fieldValueLabel(f, v) {
+  if (v === undefined || v === null) return '—';
+  if (f.type === 'enum') return f.options?.find(o => o.value === v)?.label ?? v;
+  if (f.type === 'bool') return v ? t('yes') : t('no');
+  return v;
+}
+
+function parseHash() {
+  const [path, q = ''] = (location.hash.slice(1) || 'overview').split('?');
+  return { path: path.split('/'), q: Object.fromEntries(new URLSearchParams(q)) };
+}
+const setHash = (path, q = {}) => {
+  const qs = new URLSearchParams(Object.entries(q).filter(([, v]) => v)).toString();
+  location.hash = path + (qs ? '?' + qs : '');
+};
+
+async function route() {
+  const { path, q } = parseHash();
+  document.querySelectorAll('nav .tab[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === (path[0] === 'session' ? 'sessions' : path[0])));
+  const app = $('#app');
+  if (!meta.strategies.length && !meta.sessions.length) { app.innerHTML = onboardingHtml(); return; }
+  try {
+    if (path[0] === 'sessions') renderSessions(app);
+    else if (path[0] === 'session') await renderSession(app, Number(path[1]));
+    else if (path[0] === 'strategies') renderStrategies(app);
+    else await renderOverview(app, q);
+  } catch (e) { app.innerHTML = `<div class="card empty">⚠️ ${esc(e.message)}</div>`; }
+}
+
+// ------------------------------------------------------------------ views
+function onboardingHtml() {
+  return `<div class="card onboard"><h2 style="font-size:17px;color:var(--ink)">${t('onboardTitle')}</h2>
+    <p>${t('onboardText')}</p><p style="font-size:18px;font-weight:650">${t('onboardSay')}</p>
+    <p class="muted">${t('onboardAfter')}</p><p class="muted">${t('onboardDemo')}</p></div>`;
+}
+
+async function renderOverview(app, q) {
+  const accounts = meta.accounts.map(a => a.name);
+  const symbols = [...new Set(meta.sessions.map(s => s.symbol))].sort();
+  const opt = (v, label, cur) => `<option value="${esc(v)}" ${v === (cur ?? '') ? 'selected' : ''}>${esc(label)}</option>`;
+  app.innerHTML = `
+    <div class="filters" id="filters">
+      <label>${t('mode')}<select name="mode">${opt('', t('all'), q.mode)}${['backtest', 'forward', 'live'].map(m => opt(m, t(m), q.mode)).join('')}</select></label>
+      <label>${t('strategy')}<select name="strategy">${opt('', t('all'), q.strategy)}${meta.strategies.map(s => opt(s.slug, s.name, q.strategy)).join('')}</select></label>
+      <label>${t('account')}<select name="account">${opt('', t('all'), q.account)}${accounts.map(a => opt(a, a, q.account)).join('')}</select></label>
+      <label>${t('symbol')}<select name="symbol">${opt('', t('all'), q.symbol)}${symbols.map(s => opt(s, s, q.symbol)).join('')}</select></label>
+      <label>${t('from')}<input type="date" name="from" value="${esc(q.from ?? '')}"></label>
+      <label>${t('to')}<input type="date" name="to" value="${esc(q.to ?? '')}"></label>
+    </div>
+    <div id="risk"></div>
+    <div id="dash"></div>`;
+  $('#filters').onchange = () => {
+    const f = Object.fromEntries([...$('#filters').querySelectorAll('select, input')].map(el => [el.name, el.value]));
+    setHash('overview', f);
+  };
+  const acc = q.account ? meta.accounts.find(a => a.name === q.account) : meta.accounts.length === 1 ? meta.accounts[0] : null;
+  if (acc && (acc.max_daily_loss_pct || acc.max_total_drawdown_pct || acc.max_trades_per_day || acc.max_consecutive_losses)) renderRisk(acc.name);
+  await renderDash($('#dash'), q);
+}
+
+async function renderRisk(account) {
+  try {
+    const r = await api('/api/risk?account=' + encodeURIComponent(account));
+    const msgs = r.alerts.filter(a => a.level !== 'info').map(a => esc(a.msg)).join(' · ');
+    $('#risk').innerHTML = `<div class="alert ${r.status}"><b>${t('riskStatus')[r.status]}</b> ${esc(t('riskTitle', r.account))} — ${t('riskToday', r.today.r, r.today.pct)}
+      ${msgs ? ' · ' + msgs : ''}${r.overall.profit_target_progress !== null ? ` · ${t('targetProgress', r.overall.profit_target_progress)}` : ''}</div>`;
+  } catch { /* account without data — no banner */ }
+}
+
+async function renderDash(el, filters) {
+  const qs = new URLSearchParams(Object.entries(filters).filter(([, v]) => v)).toString();
+  const [s, trades, lessons] = await Promise.all([api('/api/stats?' + qs), api('/api/trades?' + qs), api('/api/lessons?' + qs)]);
+  const pf = s.profit_factor === null ? '—' : s.profit_factor === 'Infinity' ? '∞' : s.profit_factor;
+  const edge = s.edge_score;
+  el.innerHTML = `
+    <div class="tiles">
+      ${tile(t('closed'), s.taken, `${s.wins}W · ${s.losses}L · ${s.breakeven}BE${s.open ? ` · ${s.open} ${t('open')}` : ''}${s.missing_r ? ` · ${t('missingR', s.missing_r)}` : ''}`)}
+      ${tile(t('winRate'), s.win_rate === null ? '—' : s.win_rate + '%')}
+      ${tile(t('totalR'), fmtR(s.total_r), s.pnl_total !== null ? `P&L ${fmtR(s.pnl_total)}` : '', cls(s.total_r))}
+      ${tile(t('expectancy'), s.expectancy_r === null ? '—' : fmtR(s.expectancy_r) + 'R', t('perTrade'), cls(s.expectancy_r))}
+      ${tile(t('pf'), pf, s.payoff_ratio !== null ? `payoff ${s.payoff_ratio}` : '')}
+      ${tile(t('maxDD'), s.max_drawdown_r ? '−' + s.max_drawdown_r + 'R' : '0R', `streak W${s.streaks.longest_win} / L${s.streaks.longest_loss}`)}
+      ${tile(t('edge'), edge.score ?? '—', edge.score === null ? t('edgeWithheld') : `v${edge.version}`, '', edgeTitle(edge))}
+      ${tile(t('skipped'), s.skipped.total, s.skipped.reviewed ? t('skipReview', s.skipped.correct, s.skipped.wrong) : t('notReviewed'))}
+    </div>
+    <div class="card"><h2>${t('equity')} <span class="hint">${t('equityHint')}</span></h2>
+      <div class="chart-box" id="equity-box"><div class="tooltip" id="eq-tip"></div></div></div>
+    <div class="grid2">
+      <div class="card"><h2>${t('calendar')} <span class="hint">${t('calHint')}</span></h2><div id="cal"></div></div>
+      <div class="card"><h2>${t('rules')} <span class="hint">${t('rulesHint')}</span></h2><div id="rules"></div></div>
+    </div>
+    <div class="grid2" id="breakdowns"></div>
+    <div class="card"><h2>${t('tradesTitle')} <span class="hint">${t('tradesHint')}</span></h2><div class="table-scroll" id="trades"></div></div>
+    <div class="card" id="detail" style="display:none"></div>
+    <div class="card"><h2>${t('lessons')}</h2><div id="lessons"></div></div>`;
+  renderEquity(s.equity_curve);
+  renderCalendar(s.calendar);
+  renderRules(s.rules);
+  renderBreakdowns(s);
+  renderTrades(trades);
+  $('#lessons').innerHTML = lessons.length ? lessons.slice(0, 30).map(lessonHtml).join('') : `<div class="empty">${t('noLessons')}</div>`;
+}
+
+const tile = (label, value, sub = '', c = '', title = '') =>
+  `<div class="tile" ${title ? `title="${esc(title)}"` : ''}><div class="label">${label}</div><div class="value ${c}">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
+const edgeTitle = (e) => e.components ? Object.entries(e.components).map(([k, c]) => `${k}: ${c.score} (w${c.weight})`).join('\n') : e.reason ?? '';
+
+function renderEquity(pts) {
+  const box = $('#equity-box');
+  if (!pts.length) { box.insertAdjacentHTML('beforeend', `<div class="empty">${t('noClosed')}</div>`); return; }
+  const W = Math.max(300, box.clientWidth), H = 230, m = { t: 12, r: 14, b: 22, l: 42 };
+  const xs = (i) => m.l + (pts.length === 1 ? 0.5 : i / (pts.length - 1)) * (W - m.l - m.r);
+  let lo = Math.min(0, ...pts.map(p => p.equity)), hi = Math.max(0, ...pts.map(p => p.equity));
+  if (lo === hi) { lo -= 1; hi += 1; }
+  const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+  const yv = (v) => m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b);
+  const grid = niceTicks(lo, hi, 5).map(v => `<line x1="${m.l}" x2="${W - m.r}" y1="${yv(v)}" y2="${yv(v)}" stroke="var(--grid)"/>
+    <text x="${m.l - 6}" y="${yv(v) + 3}" text-anchor="end">${v}R</text>`).join('');
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${xs(i)},${yv(p.equity)}`).join('');
+  box.insertAdjacentHTML('beforeend', `<svg width="${W}" height="${H}" role="img" aria-label="${t('equity')}">${grid}
+    <line x1="${m.l}" x2="${W - m.r}" y1="${yv(0)}" y2="${yv(0)}" stroke="var(--baseline)" stroke-width="1.5"/>
+    <path d="M${xs(0)},${yv(0)} ${pts.map((p, i) => `L${xs(i)},${yv(p.equity)}`).join(' ')} L${xs(pts.length - 1)},${yv(0)} Z" fill="var(--series)" opacity="0.08"/>
+    <path d="${line}" fill="none" stroke="var(--series)" stroke-width="2" stroke-linejoin="round"/>
+    <line id="eq-cross" y1="${m.t}" y2="${H - m.b}" stroke="var(--baseline)" style="display:none"/>
+    <circle id="eq-dot" r="4" fill="var(--series)" stroke="var(--surface)" stroke-width="2" style="display:none"/>
+    <text x="${W - m.r}" y="${H - 6}" text-anchor="end">${t('tradeN', pts.length)}</text></svg>`);
+  const svg = box.querySelector('svg'), tip = $('#eq-tip');
+  svg.addEventListener('mousemove', (ev) => {
+    const x = ev.clientX - svg.getBoundingClientRect().left;
+    let best = 0, bd = Infinity;
+    pts.forEach((p, i) => { const d = Math.abs(xs(i) - x); if (d < bd) { bd = d; best = i; } });
+    const p = pts[best], cross = $('#eq-cross', svg), dot = $('#eq-dot', svg);
+    cross.style.display = dot.style.display = '';
+    cross.setAttribute('x1', xs(best)); cross.setAttribute('x2', xs(best));
+    dot.setAttribute('cx', xs(best)); dot.setAttribute('cy', yv(p.equity));
+    tip.style.display = 'block';
+    tip.innerHTML = `#${p.session_id}/${p.trade_no} · ${esc(p.date)} · R <b>${fmtR(p.r)}</b> · Σ <b>${fmtR(p.equity)}R</b>`;
+    tip.style.left = Math.min(xs(best) + 12, W - tip.offsetWidth - 8) + 'px';
+    tip.style.top = Math.max(0, yv(p.equity) - 38) + 'px';
+  });
+  svg.addEventListener('mouseleave', () => { tip.style.display = 'none'; $('#eq-cross', svg).style.display = $('#eq-dot', svg).style.display = 'none'; });
+}
+
+function niceTicks(lo, hi, n) {
+  const span = hi - lo, mag = Math.pow(10, Math.floor(Math.log10(span / n)));
+  const step = [1, 2, 5, 10].map(s => s * mag).find(s => span / s <= n) || 10 * mag;
+  const out = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) out.push(Math.round(v * 100) / 100);
+  return out;
+}
+
+function renderCalendar(days) {
+  const el = $('#cal');
+  if (!days.length) { el.innerHTML = `<div class="empty">${t('noData')}</div>`; return; }
+  const byDate = new Map(days.map(d => [d.date, d]));
+  const last = new Date(days.at(-1).date + 'T00:00:00Z');
+  const first = new Date(Math.max(new Date(days[0].date + 'T00:00:00Z'), last - 181 * 864e5));
+  first.setUTCDate(first.getUTCDate() - first.getUTCDay());
+  const maxAbs = Math.max(...days.map(d => Math.abs(d.total_r)), 1);
+  let cells = '';
+  for (let d = new Date(first); d <= last; d.setUTCDate(d.getUTCDate() + 1)) {
+    const key = d.toISOString().slice(0, 10), x = byDate.get(key);
+    if (!x) { cells += `<div title="${key}"></div>`; continue; }
+    const a = 25 + Math.round(Math.abs(x.total_r) / maxAbs * 75);
+    const c = x.total_r > 0 ? 'var(--series)' : x.total_r < 0 ? 'var(--neg)' : 'var(--baseline)';
+    cells += `<div style="background:color-mix(in srgb, ${c} ${a}%, var(--cal-0))" title="${key}: ${fmtR(x.total_r)}R · ${t('trades', x.trades)}"></div>`;
+  }
+  el.innerHTML = `<div class="cal">${cells}</div><div class="legend"><span style="--c:var(--series)">${t('calMore')}</span><span style="--c:var(--neg)">${t('calLess')}</span><span style="--c:var(--cal-0)">${t('calNone')}</span></div>`;
+}
+
+function renderRules(r) {
+  const el = $('#rules');
+  if (!r.rules.length) { el.innerHTML = `<div class="empty">${t('noRules')}</div>`; return; }
+  const box = (label, x) => `<div><div class="muted" style="font-size:11px">${label}</div>
+    <div class="big ${cls(x?.expectancy_r)}">${x?.expectancy_r === null || !x ? '—' : fmtR(x.expectancy_r) + 'R'}</div>
+    <div class="muted" style="font-size:11px">${x ? `${t('trades', x.trades)} · ${x.win_rate ?? '—'}%` : ''}</div></div>`;
+  el.innerHTML = `<div class="cmp">${box(t('followed'), r.followed)}${box(t('broken'), r.broken)}</div>` +
+    r.rules.map(x => `<div class="rule-row">
+      <div>${esc(x.text)} <span class="badge b-${x.severity}">${x.severity}</span></div>
+      <div><div class="track"><div style="width:${x.pass_rate ?? 0}%;height:100%;background:var(--series)"></div></div>
+        <span class="muted">${x.pass_rate ?? '—'}% ${t('passRate')} (${x.pass}/${x.checked})</span></div>
+      <div class="muted">${t('eWhenPass')} <b class="${cls(x.expectancy_when_pass)}">${fmtR(x.expectancy_when_pass)}</b><br>${t('eWhenFail')} <b class="${cls(x.expectancy_when_fail)}">${fmtR(x.expectancy_when_fail)}</b></div>
+    </div>`).join('');
+}
+
+function barCard(title, groups, labelFn = (g) => g.label ?? g.key) {
+  if (!groups?.length) return `<div class="card"><h2>${esc(title)}</h2><div class="empty">${t('noData')}</div></div>`;
+  const max = Math.max(...groups.map(g => Math.abs(g.total_r)), 0.01);
+  return `<div class="card"><h2>${esc(title)}</h2>${groups.map(g => {
+    const l = g.key === '(unset)' ? t('unset') : labelFn(g);
+    return `<div class="bar-row"><div class="lbl" title="${esc(l)}">${esc(l)}</div>
+      <div class="track"><div style="width:${Math.abs(g.total_r) / max * 100}%;height:100%;background:${g.total_r >= 0 ? 'var(--series)' : 'var(--neg)'};border-radius:0 4px 4px 0"></div></div>
+      <div class="val"><b class="${cls(g.total_r)}">${fmtR(g.total_r)}R</b> · ${t('trades', g.trades)} · ${g.win_rate}%</div></div>`;
+  }).join('')}</div>`;
+}
+
+function renderBreakdowns(s) {
+  const cards = s.fields.map(f => barCard(f.label, f.groups, (g) => f.type === 'bool' ? (g.key === 'true' ? t('yes') : t('no')) : g.label));
+  cards.push(barCard(t('byDirection'), s.breakdown.direction));
+  if (s.breakdown.symbol.length > 1) cards.push(barCard(t('bySymbol'), s.breakdown.symbol));
+  cards.push(barCard(t('byWeekday'), s.breakdown.weekday, (g) => I18N[lang].weekdays[g.key] ?? g.key));
+  if (s.breakdown.hour.length) cards.push(barCard(t('byHour'), s.breakdown.hour));
+  $('#breakdowns').innerHTML = cards.join('');
+}
+
+let currentTrades = [];
+function renderTrades(trades) {
+  currentTrades = trades;
+  const el = $('#trades');
+  if (!trades.length) { el.innerHTML = `<div class="empty">${t('noTrades')}</div>`; return; }
+  const keys = [];
+  for (const tr of trades) for (const k of Object.keys(tr.fields)) if (!keys.includes(k)) keys.push(k);
+  const cols = keys.slice(0, 3).map(fieldLabel);
+  el.innerHTML = `<table><thead><tr><th>${t('colSession')}</th><th>${t('colTime')}</th><th>${t('symbol')}</th><th>${t('colSide')}</th>
+    ${cols.map(f => `<th>${esc(f.label)}</th>`).join('')}<th>RR</th><th>${t('colResult')}</th><th>R</th><th>📷</th></tr></thead>
+    <tbody>${trades.map(tr => `<tr class="click" data-id="${tr.id}">
+      <td>${tr.session_id}/#${tr.trade_no}</td><td>${esc(tr.chart_time ?? tr.trade_date)}</td><td>${esc(tr.symbol)}</td>
+      <td>${tr.direction ? `<span class="badge">${tr.direction.toUpperCase()}</span>` : '—'}</td>
+      ${cols.map(f => `<td>${esc(fieldValueLabel(f, tr.fields[f.key]))}</td>`).join('')}
+      <td>${tr.rr_planned ?? '—'}</td><td>${outcomeBadge(tr)}</td>
+      <td class="${cls(tr.result_r)}">${fmtR(tr.result_r)}</td><td>${tr.screenshot_count || ''}</td></tr>`).join('')}</tbody></table>`;
+  el.querySelectorAll('tbody tr').forEach(row => row.onclick = () => showTrade(Number(row.dataset.id)));
+}
+
+async function showTrade(id) {
+  document.querySelectorAll('#trades tr.sel').forEach(r => r.classList.remove('sel'));
+  $(`#trades tr[data-id="${id}"]`)?.classList.add('sel');
+  const tr = await api('/api/trades/' + id);
+  const st = tr.strategy ? strategyBySlug(tr.strategy) : null;
+  const fields = Object.entries(tr.fields).map(([k, v]) => {
+    const f = st?.fields.find(x => x.key === k) ?? fieldLabel(k);
+    return `<dt>${esc(f.label)}</dt><dd>${esc(fieldValueLabel(f, v))}</dd>`;
+  }).join('');
+  const status = tr.status === 'skipped' ? t('skippedPrefix') + esc(tr.skip_reason ?? '')
+    : (tr.outcome ? tr.outcome.toUpperCase() : t('open')) + (tr.partial_taken ? ' · ' + t('partial') : '') + (tr.moved_be ? ' · ' + t('movedBe') : '');
+  const d = $('#detail');
+  d.style.display = '';
+  d.innerHTML = `<h2>${esc(t('detail', tr.session_id, tr.trade_no, tr.symbol))} · ${esc(tr.chart_time ?? tr.trade_date)}${tr.strategy_name ? ` · ${esc(tr.strategy_name)} v${tr.strategy_version ?? '?'}` : ''}</h2>
+    <dl class="kv">
+      <dt>${t('status')}</dt><dd>${status}</dd>
+      <dt>${t('prices')}</dt><dd>Entry ${tr.entry ?? '—'} · SL ${tr.sl ?? '—'} · TP ${tr.tp ?? '—'}${tr.tp2 != null ? ` · TP2 ${tr.tp2}` : ''}${tr.exit_price != null ? ` · Exit ${tr.exit_price}` : ''} · RR ${tr.rr_planned ?? '—'}</dd>
+      <dt>${t('result')}</dt><dd class="${cls(tr.result_r)}"><b>${fmtR(tr.result_r)}R</b>${tr.pnl != null ? ` · P&L ${fmtR(tr.pnl)}` : ''}</dd>
+      ${tr.mae_r != null || tr.mfe_r != null ? `<dt>${t('excursion')}</dt><dd>${tr.mae_r ?? '—'}R / ${tr.mfe_r ?? '—'}R</dd>` : ''}
+      ${fields}
+      ${tr.exit_reason ? `<dt>${t('exitReason')}</dt><dd>${esc(tr.exit_reason)}</dd>` : ''}
+      ${tr.mistakes ? `<dt>${t('mistakes')}</dt><dd>⚠️ ${esc(tr.mistakes)}</dd>` : ''}
+      ${tr.notes ? `<dt>${t('notes')}</dt><dd>${esc(tr.notes)}</dd>` : ''}
+      ${tr.tags ? `<dt>${t('tags')}</dt><dd>${esc(tr.tags)}</dd>` : ''}
+      ${tr.source !== 'agent' ? `<dt>${t('source')}</dt><dd>${esc(tr.source)}</dd>` : ''}
+    </dl>
+    ${tr.rule_checks.length ? `<h2 style="margin-top:14px">${t('ruleChecks')}</h2>${tr.rule_checks.map(c => `<div class="rule-row" style="grid-template-columns:70px 1fr">
+      <div><span class="badge b-${c.result}">${c.result.toUpperCase()}</span></div><div>${esc(c.text)}${c.note ? ` <span class="muted">— ${esc(c.note)}</span>` : ''}</div></div>`).join('')}` : ''}
+    ${tr.lessons.length ? `<h2 style="margin-top:14px">${t('lessons')}</h2>${tr.lessons.map(lessonHtml).join('')}` : ''}
+    ${tr.screenshots.map(s => `<figure style="margin:10px 0 0"><img src="/screenshots/${encodeURIComponent(s.path)}" alt="${esc(s.caption ?? 'screenshot')}" loading="lazy">${s.caption ? `<figcaption class="muted" style="font-size:12px">${esc(s.caption)}</figcaption>` : ''}</figure>`).join('')}`;
+  d.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+const lessonHtml = (l) => `<div class="lesson">${esc(l.text)}<div class="meta">${esc(l.category)}${l.trade_no ? ` · #${l.trade_session_id}/${l.trade_no}` : l.session_id ? ` · session ${l.session_id}` : ''} · ${esc(l.created_at ?? '')}</div></div>`;
+
+function renderSessions(app) {
+  if (!meta.sessions.length) { app.innerHTML = `<div class="card empty">${t('noSessions')}</div>`; return; }
+  app.innerHTML = `<div class="card"><h2>${t('sessionList')}</h2><div class="table-scroll"><table><thead><tr>
+    <th>#</th><th>${t('colDate')}</th><th>${t('colMode')}</th><th>${t('symbol')}</th><th>${t('strategy')}</th><th>${t('account')}</th><th>${t('colTrades')}</th><th>${t('winRate')}</th><th>${t('totalR')}</th>
+    </tr></thead><tbody>${meta.sessions.map(s => `<tr class="click" onclick="location.hash='#session/${s.id}'">
+      <td>${s.id}</td><td>${esc(s.date)}</td><td>${t(s.mode)}</td><td>${esc(s.symbol)}</td><td>${esc(s.strategy_name ?? '—')}</td><td>${esc(s.account ?? '—')}</td>
+      <td>${s.trades}</td><td>${s.closed ? Math.round(s.wins / s.closed * 100) + '%' : '—'}</td><td class="${cls(s.total_r)}">${fmtR(s.total_r)}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
+async function renderSession(app, id) {
+  const s = meta.sessions.find(x => x.id === id);
+  app.innerHTML = `<div class="crumb"><a onclick="location.hash='#sessions'">${t('back')}</a></div>
+    <div class="card">${!s ? `<div class="empty">—</div>` : `<h2>#${s.id} · ${esc(s.symbol)} · ${esc(s.date)} · ${t(s.mode)}</h2><dl class="kv">
+      ${s.strategy_name ? `<dt>${t('strategy')}</dt><dd>${esc(s.strategy_name)}</dd>` : ''}
+      ${s.account ? `<dt>${t('account')}</dt><dd>${esc(s.account)}</dd>` : ''}
+      ${s.timeframes ? `<dt>${t('timeframes')}</dt><dd>${esc(s.timeframes)}</dd>` : ''}
+      ${s.data_from ? `<dt>${t('range')}</dt><dd>${esc(s.data_from)} → ${esc(s.data_to ?? '…')}</dd>` : ''}
+      ${s.tool_version ? `<dt>${t('tool')}</dt><dd>${esc(s.tool_version)}</dd>` : ''}
+      ${s.settings_json ? `<dt>Settings</dt><dd><code>${esc(s.settings_json)}</code></dd>` : ''}
+      ${s.notes ? `<dt>${t('notes')}</dt><dd>${esc(s.notes)}</dd>` : ''}</dl>`}</div><div id="dash"></div>`;
+  if (s) await renderDash($('#dash'), { session_id: id });
+}
+
+function renderStrategies(app) {
+  if (!meta.strategies.length) { app.innerHTML = onboardingHtml(); return; }
+  app.innerHTML = meta.strategies.map(s => {
+    const planRows = Object.entries(s.plan ?? {}).map(([k, v]) => `<dt>${esc(I18N[lang].planKeys[k] ?? k)}</dt><dd>${esc(v)}</dd>`).join('');
+    const fields = s.fields.filter(f => !f.archived);
+    const rules = s.rules.filter(r => !r.archived);
+    return `<div class="card strategy-card">
+      <h3>${esc(s.name)} <span class="muted" style="font-size:12px;font-weight:500">${esc(s.slug)} · ${t('version')} ${s.version} · ${t('trades', s.trades)}</span></h3>
+      ${s.description ? `<p class="desc">${esc(s.description)}</p>` : ''}
+      ${s.markets || s.timeframes ? `<p class="muted" style="margin:0 0 10px">${esc([s.markets, s.timeframes].filter(Boolean).join(' · '))}</p>` : ''}
+      ${planRows ? `<h2>${t('plan')}</h2><dl class="kv" style="margin-bottom:14px">${planRows}</dl>` : ''}
+      <div class="grid2" style="margin-bottom:10px">
+        <div><h2>${t('fields')}</h2><table><tbody>${fields.map(f => `<tr><td><b>${esc(f.label)}</b>${f.required ? ` <span class="badge">${t('required')}</span>` : ''}<br><span class="muted" style="font-size:11px">${esc(f.guide ?? '')}</span></td>
+          <td class="muted" style="font-size:12px">${f.type === 'enum' ? f.options.map(o => esc(o.label)).join(' · ') : f.type}</td></tr>`).join('')}</tbody></table></div>
+        <div><h2>${t('rulesList')}</h2>${rules.map(r => `<div class="rule-row" style="grid-template-columns:60px 1fr"><div><span class="badge b-${r.severity}">${r.severity}</span></div>
+          <div>${esc(r.text)}${r.guide ? `<br><span class="muted">${esc(r.guide)}</span>` : ''}</div></div>`).join('')}</div>
+      </div>
+      <a class="link" onclick="location.hash='#overview?strategy=${encodeURIComponent(s.slug)}'">${t('viewTrades')}</a>
+    </div>`;
+  }).join('');
+}
+
+// ------------------------------------------------------------------ boot
+function applyChrome() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('nav .tab[data-view]').forEach(b => { b.textContent = t(b.dataset.view); b.onclick = () => setHash(b.dataset.view); });
+  $('#lang-btn').textContent = t('switchTo');
+  const p = meta?.profile ?? {};
+  $('#profile-line').textContent = [p.markets, p.style].filter(Boolean).join(' · ');
+}
+$('#lang-btn').onclick = () => { lang = lang === 'en' ? 'vi' : 'en'; try { localStorage.setItem('atj-lang', lang); } catch {} applyChrome(); route(); };
+window.addEventListener('hashchange', route);
+let resizeTimer;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(route, 200); });
+
+(async () => {
+  meta = await api('/api/meta');
+  applyChrome();
+  route();
+})();
+</script>
+</body>
+</html>

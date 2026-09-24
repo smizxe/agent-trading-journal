@@ -1,0 +1,31 @@
+{
+  "slug": "opening-range-breakout",
+  "name": "Opening range breakout",
+  "description": "Trade the break of the first N minutes' range of the session, in the direction of the break.",
+  "markets": "Index futures (ES, NQ), liquid US stocks, DAX",
+  "timeframes": "M5 / M15 opening range",
+  "plan": {
+    "summary": "The opening range captures the overnight imbalance; a decisive break often runs.",
+    "bias": "Optional: pre-market trend or gap direction.",
+    "setup": "Mark the high/low of the first 15 (or 30) minutes.",
+    "entry": "A candle closes outside the range with above-average volume.",
+    "stop": "Middle or opposite side of the opening range.",
+    "targets": "1R–2R, or the session VWAP extension.",
+    "management": "Exit by the end of the session; no overnight holds.",
+    "no_trade": "Range wider than 1.5× average; major news in the first hour."
+  },
+  "fields": [
+    { "key": "range_minutes", "label": "Opening range", "type": "enum", "options": [
+      { "value": "5", "label": "5 min" }, { "value": "15", "label": "15 min" }, { "value": "30", "label": "30 min" }] },
+    { "key": "gap", "label": "Opening gap", "type": "enum", "options": [
+      { "value": "gap_up", "label": "Gap up" }, { "value": "gap_down", "label": "Gap down" }, { "value": "none", "label": "No gap" }] },
+    { "key": "with_gap", "label": "Break in gap direction", "type": "bool" },
+    { "key": "volume_confirmed", "label": "Volume above average on the break", "type": "bool", "guide": "Compare the break candle's volume with the 20-bar average." }
+  ],
+  "rules": [
+    { "key": "close_outside", "text": "Candle closed outside the range (not just a wick)", "severity": "must" },
+    { "key": "range_normal", "text": "Range width not abnormally large", "severity": "must" },
+    { "key": "first_break_only", "text": "Only the first break of the session", "severity": "should" },
+    { "key": "flat_by_close", "text": "Flat before the session closes", "severity": "must" }
+  ]
+}
