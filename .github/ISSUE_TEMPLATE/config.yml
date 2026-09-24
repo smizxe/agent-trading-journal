@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/smizxe/agent-trading-journal/discussions
+    about: Ask how to set up your strategy, share presets, or discuss workflows.

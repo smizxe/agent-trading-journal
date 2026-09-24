@@ -1,4 +1,12 @@
-# Agent Trading Journal
+# Agent Trading Journal: an AI trading journal (MCP server) for Claude Code and Codex
+
+[![npm](https://img.shields.io/npm/v/agent-trading-journal?color=2a78d6)](https://www.npmjs.com/package/agent-trading-journal)
+[![test](https://github.com/smizxe/agent-trading-journal/actions/workflows/test.yml/badge.svg)](https://github.com/smizxe/agent-trading-journal/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-white)](LICENSE)
+[![MCP](https://img.shields.io/badge/MCP-server-8a63d2)](https://modelcontextprotocol.io)
+[![Node](https://img.shields.io/badge/node-%E2%89%A522-339933)](package.json)
+
+**Works with:** Claude Code · Codex CLI · Claude Desktop · Cursor · Windsurf · any MCP client — **Markets:** forex, futures, stocks, crypto — **Imports:** MetaTrader 4/5, TradingView, IBKR, NinjaTrader, Tradovate and more
 
 **A trading journal your AI agent writes for you.** Paste a chart screenshot into Claude Code, Codex or any MCP client. The agent reads it, fills in *your* strategy's fields, checks the trade against *your* rules, logs it, and attaches the image. A local dashboard shows what's working.
 
@@ -27,7 +35,7 @@ Here the agent is the data-entry clerk, and the journal is shaped by an onboardi
 
 ## Quick start
 
-**1. Connect it to your agent.**
+**1. Connect it to your agent.** Requires Node.js 22+.
 
 Claude Code:
 ```bash
@@ -100,6 +108,26 @@ agent-trading-journal setup            config snippets for Claude Code / Claude 
 ## Safety
 
 This is a journaling and analysis tool. It does not place trades, connect to brokers for execution, or give financial advice. Leveraged trading is high-risk. The agent's chart reading can be wrong: every logged value is visible and editable, and rule checks show which ones failed and why.
+
+## FAQ
+
+### Do I need an OpenAI or Anthropic API key?
+No. The journal is an MCP server; the AI is the agent you already use (Claude Code, Codex, Claude Desktop, Cursor…). The journal itself never calls an LLM.
+
+### Where is my data stored? Is anything sent online?
+Everything is in one local SQLite file plus a screenshots folder (`~/.agent-trading-journal` by default). The dashboard binds to `127.0.0.1`. Nothing is uploaded anywhere by the journal.
+
+### Can I use my own trading strategy?
+That's the point. The onboarding interview turns *your* plan into custom fields and a rule checklist. Presets are only starting points. SMC/ICT, price action, supply & demand, indicators, options: anything you can describe works.
+
+### Can I import trades from MetaTrader 5 or TradingView?
+Yes: `import_statement` (or `agent-trading-journal import <file> --account <name>`) reads MT4/MT5 statements, TradingView paper/strategy exports, IBKR, ThinkorSwim, NinjaTrader, Tradovate, TopstepX, Webull, DAS, TradeZella and Tradervue exports. Your agent can then add screenshots and rule checks to the imported trades.
+
+### Does it work for backtesting (TradingView Replay) and prop firm challenges?
+Yes. Sessions are `backtest`, `forward` or `live`. Accounts can carry prop-firm limits (daily loss, max drawdown, trades per day, loss streak), and `check_risk` warns before you hit them.
+
+### Does it place trades or give signals?
+No. It only records and analyses. You make every trading decision.
 
 ## Credits and license
 

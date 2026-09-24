@@ -1,6 +1,7 @@
 {
   "name": "agent-trading-journal",
   "version": "0.1.0",
+  "mcpName": "io.github.smizxe/agent-trading-journal",
   "description": "An AI-agent-native trading journal: your agent (Claude Code, Codex, any MCP client) logs trades from chart screenshots, checks them against your own strategy rules, and a local dashboard shows the stats.",
   "license": "MIT",
   "author": "smizxe (https://github.com/smizxe)",
@@ -29,7 +30,7 @@
     "README.vi.md"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "mcp": "node bin/cli.js mcp",
@@ -39,14 +40,25 @@
   },
   "keywords": [
     "trading-journal",
+    "trade-journal",
+    "trading",
     "mcp",
+    "mcp-server",
     "model-context-protocol",
     "claude",
+    "claude-code",
     "codex",
     "ai-agent",
     "backtesting",
+    "tradingview",
+    "metatrader",
+    "mt5",
     "forex",
-    "prop-firm"
+    "futures",
+    "crypto",
+    "stocks",
+    "prop-firm",
+    "journal"
   ],
   "dependencies": {
     "@hono/node-server": "^1.14.0",

@@ -12,7 +12,7 @@ These instructions cover two cases: an AI agent using the journal as its tool (C
 
 ## Developing this repo
 
-- Node ≥ 20, ESM, no build step. `npm test` runs domain tests plus an end-to-end MCP test over stdio.
+- Node ≥ 22, ESM, no build step. `npm test` runs domain tests plus an end-to-end MCP test over stdio.
 - Layout:
 
 | Path | Role |
