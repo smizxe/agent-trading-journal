@@ -18,7 +18,7 @@ Node ≥ 22, plain ESM JavaScript, no build step. See [AGENTS.md](AGENTS.md) for
 
 - **Presets**: a new `presets/*.json` for a widely known, public strategy style. Keep it textbook, since presets are starting points, not signals. Every field needs a `guide` explaining how an agent reads it from a chart.
 - **Onboarding**: improvements to [docs/ONBOARDING.md](docs/ONBOARDING.md), such as better questions or clearer steps for turning answers into fields and rules.
-- **Dashboard translations**: add a language to the `I18N` object in `public/index.html`.
+- **Dashboard translations**: a locale JSON file; see [docs/locales.md](docs/locales.md).
 - **Import formats**: parsing lives upstream in [`@luxalgo/journal-importers`](https://github.com/LuxAlgo/trade-journal). Broker format fixes belong there.
 
 ## Rules

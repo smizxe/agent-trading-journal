@@ -121,85 +121,58 @@ const fmtR = (r) => r === null || r === undefined ? '—' : (r > 0 ? '+' : '') +
 const cls = (x) => x > 0 ? 'pos' : x < 0 ? 'negv' : '';
 const api = (p) => fetch(p).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error || r.statusText); return j; });
 
-const I18N = {
-  en: {
-    overview: 'Overview', sessions: 'Sessions', strategies: 'Strategies', switchTo: 'VI',
-    all: 'All', mode: 'Mode', account: 'Account', strategy: 'Strategy', symbol: 'Symbol', from: 'From', to: 'To',
-    backtest: 'Backtest', forward: 'Forward', live: 'Live',
-    closed: 'Closed trades', winRate: 'Win rate', totalR: 'Total R', expectancy: 'Expectancy', pf: 'Profit factor', maxDD: 'Max drawdown',
-    edge: 'Edge Score', skipped: 'Skipped setups', open: 'open', perTrade: 'avg R / trade', notReviewed: 'not reviewed',
-    skipReview: (a, b) => `reviewed: ${a} right · ${b} wrong`, edgeWithheld: 'needs ≥ 5 trades', missingR: (n) => `${n} without R`,
-    equity: 'Equity curve', equityHint: '(cumulative R, closed trades)', noClosed: 'No closed trades in this scope yet.',
-    tradeN: (n) => `trade 1 → ${n}`, calendar: 'Daily R', calHint: '(each square = a day)', calLess: 'loss day', calMore: 'win day', calNone: 'no trades',
-    rules: 'Rule adherence', rulesHint: '(must-rules)', followed: 'All must-rules followed', broken: 'At least one broken',
-    trades: (n) => `${n} trade${n === 1 ? '' : 's'}`, passRate: 'pass rate', eWhenPass: 'E[R] pass', eWhenFail: 'E[R] fail',
-    noRules: 'No rule checks logged yet. Ask your agent to check each rule when it logs a trade.',
-    byDirection: 'By direction', byWeekday: 'By weekday', byHour: 'By hour', bySymbol: 'By symbol', noData: 'No data yet',
-    tradesTitle: 'Trades', tradesHint: '(click a row)', noTrades: 'No trades yet.',
-    colSession: 'Session/#', colTime: 'Time', colSide: 'Side', colResult: 'Result', colRules: 'Rules',
-    skippedBadge: 'SKIPPED', openBadge: 'OPEN',
-    detail: (sid, no, sym) => `Trade ${sid}/#${no} · ${sym}`, status: 'Status', skippedPrefix: 'Skipped — ',
-    prices: 'Prices', result: 'Result', exitReason: 'Exit', mistakes: 'Mistakes', notes: 'Notes', tags: 'Tags', source: 'Source',
-    ruleChecks: 'Rule checks', lessons: 'Lessons', noLessons: 'No lessons in this scope yet.', excursion: 'MAE / MFE',
-    movedBe: 'moved to BE', partial: 'partial taken',
-    riskTitle: (a) => `Risk guard · ${a}`, riskToday: (r, p) => `Today ${fmtR(r)}R${p !== null ? ` (${fmtR(p)}%)` : ''}`,
-    riskStatus: { ok: 'OK', caution: 'CAUTION', stop: 'STOP' },
-    targetProgress: (p) => `profit target ${p}% reached`,
-    sessionList: 'Sessions', colDate: 'Date', colMode: 'Mode', colTrades: 'Trades', noSessions: 'No sessions yet.',
-    back: '← Sessions', range: 'Data range', timeframes: 'Timeframes', tool: 'Tool / indicator',
-    plan: 'Plan', fields: 'Fields (measured per trade)', rulesList: 'Rules (entry checklist)', version: 'version',
-    viewTrades: 'View trades →', required: 'required', noStrategies: 'No strategy yet.',
-    onboardTitle: 'Let your agent set this journal up for you',
-    onboardText: 'Open Claude Code, Codex or any MCP client connected to this journal and say:',
-    onboardSay: '“Set up my trading journal.”',
-    onboardAfter: 'It will ask about your markets, risk rules and strategy, then build the fields and checklist this dashboard uses.',
-    onboardDemo: 'Just looking? Run <code>npx agent-trading-journal demo</code> for a filled example.',
-    planKeys: { summary: 'Summary', bias: 'Bias', setup: 'Setup', entry: 'Entry', stop: 'Stop', targets: 'Targets', management: 'Management', no_trade: 'No-trade' },
-    weekdays: { Sun: 'Sun', Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 'Thu', Fri: 'Fri', Sat: 'Sat' },
-    yes: 'yes', no: 'no', unset: '(unset)',
-  },
-  vi: {
-    overview: 'Tổng quan', sessions: 'Phiên', strategies: 'Chiến lược', switchTo: 'EN',
-    all: 'Tất cả', mode: 'Chế độ', account: 'Tài khoản', strategy: 'Chiến lược', symbol: 'Symbol', from: 'Từ', to: 'Đến',
-    backtest: 'Backtest', forward: 'Forward', live: 'Live',
-    closed: 'Lệnh đã đóng', winRate: 'Win rate', totalR: 'Tổng R', expectancy: 'Expectancy', pf: 'Profit factor', maxDD: 'Max drawdown',
-    edge: 'Edge Score', skipped: 'Kèo đứng ngoài', open: 'đang mở', perTrade: 'R trung bình / lệnh', notReviewed: 'chưa review',
-    skipReview: (a, b) => `review: ${a} đúng · ${b} sai`, edgeWithheld: 'cần ≥ 5 lệnh', missingR: (n) => `${n} lệnh chưa có R`,
-    equity: 'Equity curve', equityHint: '(R cộng dồn, lệnh đã đóng)', noClosed: 'Chưa có lệnh đã đóng trong phạm vi này.',
-    tradeN: (n) => `lệnh 1 → ${n}`, calendar: 'R theo ngày', calHint: '(mỗi ô = 1 ngày)', calLess: 'ngày lỗ', calMore: 'ngày lời', calNone: 'không có lệnh',
-    rules: 'Tuân thủ rule', rulesHint: '(rule bắt buộc)', followed: 'Theo đủ rule bắt buộc', broken: 'Phá ít nhất 1 rule',
-    trades: (n) => `${n} lệnh`, passRate: 'tỷ lệ đạt', eWhenPass: 'E[R] khi đạt', eWhenFail: 'E[R] khi phá',
-    noRules: 'Chưa có lệnh nào được chấm rule. Bảo agent chấm từng rule khi ghi lệnh.',
-    byDirection: 'Theo chiều', byWeekday: 'Theo thứ', byHour: 'Theo giờ', bySymbol: 'Theo symbol', noData: 'Chưa có dữ liệu',
-    tradesTitle: 'Danh sách lệnh', tradesHint: '(bấm vào 1 dòng)', noTrades: 'Chưa có lệnh nào.',
-    colSession: 'Phiên/#', colTime: 'Thời điểm', colSide: 'Chiều', colResult: 'Kết quả', colRules: 'Rule',
-    skippedBadge: 'BỎ QUA', openBadge: 'MỞ',
-    detail: (sid, no, sym) => `Lệnh ${sid}/#${no} · ${sym}`, status: 'Trạng thái', skippedPrefix: 'Đứng ngoài — ',
-    prices: 'Giá', result: 'Kết quả', exitReason: 'Thoát lệnh', mistakes: 'Lỗi', notes: 'Ghi chú', tags: 'Tags', source: 'Nguồn',
-    ruleChecks: 'Chấm rule', lessons: 'Bài học', noLessons: 'Chưa có bài học nào trong phạm vi này.', excursion: 'MAE / MFE',
-    movedBe: 'đã dời BE', partial: 'đã chốt một phần',
-    riskTitle: (a) => `Canh rủi ro · ${a}`, riskToday: (r, p) => `Hôm nay ${fmtR(r)}R${p !== null ? ` (${fmtR(p)}%)` : ''}`,
-    riskStatus: { ok: 'ỔN', caution: 'CẨN THẬN', stop: 'DỪNG' },
-    targetProgress: (p) => `đạt ${p}% mục tiêu lợi nhuận`,
-    sessionList: 'Các phiên', colDate: 'Ngày', colMode: 'Chế độ', colTrades: 'Lệnh', noSessions: 'Chưa có phiên nào.',
-    back: '← Các phiên', range: 'Đoạn dữ liệu', timeframes: 'Khung thời gian', tool: 'Tool / indicator',
-    plan: 'Kế hoạch', fields: 'Field (đo trên từng lệnh)', rulesList: 'Rule (checklist vào lệnh)', version: 'phiên bản',
-    viewTrades: 'Xem lệnh →', required: 'bắt buộc', noStrategies: 'Chưa có chiến lược.',
-    onboardTitle: 'Để agent dựng journal này theo cách bạn trade',
-    onboardText: 'Mở Claude Code, Codex hoặc MCP client đã kết nối journal này và nói:',
-    onboardSay: '“Setup trading journal cho tôi.”',
-    onboardAfter: 'Agent sẽ hỏi về thị trường, luật rủi ro và chiến lược của bạn, rồi tạo các field và checklist mà dashboard này dùng.',
-    onboardDemo: 'Chỉ muốn xem thử? Chạy <code>npx agent-trading-journal demo</code> để có dữ liệu mẫu.',
-    planKeys: { summary: 'Tóm tắt', bias: 'Xu hướng', setup: 'Setup', entry: 'Vào lệnh', stop: 'Stop loss', targets: 'Chốt lời', management: 'Quản lý lệnh', no_trade: 'Không trade khi' },
-    weekdays: { Sun: 'CN', Mon: 'T2', Tue: 'T3', Wed: 'T4', Thu: 'T5', Fri: 'T6', Sat: 'T7' },
-    yes: 'có', no: 'không', unset: '(chưa rõ)',
-  },
+// UI strings. English ships built in; extra languages are JSON files with the same keys, loaded from
+// JOURNAL_LOCALES_DIR (default <data dir>/locales) — see docs/locales.md. "{0}" = first argument; {one, other} = plural.
+const EN = {
+  _name: 'English',
+  overview: 'Overview', sessions: 'Sessions', strategies: 'Strategies',
+  all: 'All', mode: 'Mode', account: 'Account', strategy: 'Strategy', symbol: 'Symbol', from: 'From', to: 'To',
+  backtest: 'Backtest', forward: 'Forward', live: 'Live',
+  closed: 'Closed trades', winRate: 'Win rate', totalR: 'Total R', expectancy: 'Expectancy', pf: 'Profit factor', maxDD: 'Max drawdown',
+  edge: 'Edge Score', skipped: 'Skipped setups', open: 'open', perTrade: 'avg R / trade', notReviewed: 'not reviewed',
+  skipReview: 'reviewed: {0} right · {1} wrong', edgeWithheld: 'needs ≥ 5 trades', missingR: '{0} without R',
+  equity: 'Equity curve', equityHint: '(cumulative R, closed trades)', noClosed: 'No closed trades in this scope yet.',
+  tradeN: 'trade 1 → {0}', calendar: 'Daily R', calHint: '(each square = a day)', calLess: 'loss day', calMore: 'win day', calNone: 'no trades',
+  rules: 'Rule adherence', rulesHint: '(must-rules)', followed: 'All must-rules followed', broken: 'At least one broken',
+  trades: { one: '{0} trade', other: '{0} trades' }, passRate: 'pass rate', eWhenPass: 'E[R] pass', eWhenFail: 'E[R] fail',
+  noRules: 'No rule checks logged yet. Ask your agent to check each rule when it logs a trade.',
+  byDirection: 'By direction', byWeekday: 'By weekday', byHour: 'By hour', bySymbol: 'By symbol', noData: 'No data yet',
+  tradesTitle: 'Trades', tradesHint: '(click a row)', noTrades: 'No trades yet.',
+  colSession: 'Session/#', colTime: 'Time', colSide: 'Side', colResult: 'Result', colRules: 'Rules',
+  skippedBadge: 'SKIPPED', openBadge: 'OPEN',
+  detail: 'Trade {0}/#{1} · {2}', status: 'Status', skippedPrefix: 'Skipped — ',
+  prices: 'Prices', result: 'Result', exitReason: 'Exit', mistakes: 'Mistakes', notes: 'Notes', tags: 'Tags', source: 'Source',
+  ruleChecks: 'Rule checks', lessons: 'Lessons', noLessons: 'No lessons in this scope yet.', excursion: 'MAE / MFE',
+  movedBe: 'moved to BE', partial: 'partial taken',
+  riskTitle: 'Risk guard · {0}', riskToday: 'Today {0}R{1}',
+  riskStatus: { ok: 'OK', caution: 'CAUTION', stop: 'STOP' },
+  targetProgress: 'profit target {0}% reached',
+  sessionList: 'Sessions', colDate: 'Date', colMode: 'Mode', colTrades: 'Trades', noSessions: 'No sessions yet.',
+  back: '← Sessions', range: 'Data range', timeframes: 'Timeframes', tool: 'Tool / indicator',
+  plan: 'Plan', fields: 'Fields (measured per trade)', rulesList: 'Rules (entry checklist)', version: 'version',
+  viewTrades: 'View trades →', required: 'required', noStrategies: 'No strategy yet.',
+  onboardTitle: 'Let your agent set this journal up for you',
+  onboardText: 'Open Claude Code, Codex or any MCP client connected to this journal and say:',
+  onboardSay: '“Set up my trading journal.”',
+  onboardAfter: 'It will ask about your markets, risk rules and strategy, then build the fields and checklist this dashboard uses.',
+  onboardDemo: 'Just looking? Run <code>npx agent-trading-journal demo</code> for a filled example.',
+  planKeys: { summary: 'Summary', bias: 'Bias', setup: 'Setup', entry: 'Entry', stop: 'Stop', targets: 'Targets', management: 'Management', no_trade: 'No-trade' },
+  weekdays: { Sun: 'Sun', Mon: 'Mon', Tue: 'Tue', Wed: 'Wed', Thu: 'Thu', Fri: 'Fri', Sat: 'Sat' },
+  yes: 'yes', no: 'no', unset: '(unset)',
 };
-let lang = (() => {
-  try { const v = localStorage.getItem('atj-lang'); if (v === 'en' || v === 'vi') return v; } catch {}
-  return (navigator.language || '').toLowerCase().startsWith('vi') ? 'vi' : 'en';
-})();
-const t = (k, ...a) => { const v = I18N[lang][k]; return typeof v === 'function' ? v(...a) : v; };
+const I18N = { en: EN };
+let lang = 'en';
+function pickLang() {
+  try { const v = localStorage.getItem('atj-lang'); if (v && I18N[v]) return v; } catch {}
+  const nav = (navigator.language || '').toLowerCase().slice(0, 2);
+  return I18N[nav] ? nav : 'en';
+}
+const t = (k, ...a) => {
+  let v = I18N[lang][k] ?? EN[k];
+  if (v && typeof v === 'object' && 'other' in v) v = a[0] === 1 ? (v.one ?? v.other) : v.other;
+  return typeof v === 'string' ? v.replace(/\{(\d)\}/g, (_, i) => a[i] ?? '') : v;
+};
+const tObj = (k) => ({ ...EN[k], ...(I18N[lang][k] ?? {}) });
 const outcomeBadge = (tr) => tr.status === 'skipped'
   ? `<span class="badge b-skip">${t('skippedBadge')}${tr.skip_correct === 1 ? ' ✓' : tr.skip_correct === 0 ? ' ✗' : ''}</span>`
   : tr.outcome ? `<span class="badge b-${tr.outcome}">${tr.outcome.toUpperCase()}</span>` : `<span class="badge">${t('openBadge')}</span>`;
@@ -275,7 +248,7 @@ async function renderRisk(account) {
   try {
     const r = await api('/api/risk?account=' + encodeURIComponent(account));
     const msgs = r.alerts.filter(a => a.level !== 'info').map(a => esc(a.msg)).join(' · ');
-    $('#risk').innerHTML = `<div class="alert ${r.status}"><b>${t('riskStatus')[r.status]}</b> ${esc(t('riskTitle', r.account))} — ${t('riskToday', r.today.r, r.today.pct)}
+    $('#risk').innerHTML = `<div class="alert ${r.status}"><b>${tObj('riskStatus')[r.status]}</b> ${esc(t('riskTitle', r.account))} — ${t('riskToday', fmtR(r.today.r), r.today.pct !== null ? ` (${fmtR(r.today.pct)}%)` : '')}
       ${msgs ? ' · ' + msgs : ''}${r.overall.profit_target_progress !== null ? ` · ${t('targetProgress', r.overall.profit_target_progress)}` : ''}</div>`;
   } catch { /* account without data — no banner */ }
 }
@@ -411,7 +384,7 @@ function renderBreakdowns(s) {
   const cards = s.fields.map(f => barCard(f.label, f.groups, (g) => f.type === 'bool' ? (g.key === 'true' ? t('yes') : t('no')) : g.label));
   cards.push(barCard(t('byDirection'), s.breakdown.direction));
   if (s.breakdown.symbol.length > 1) cards.push(barCard(t('bySymbol'), s.breakdown.symbol));
-  cards.push(barCard(t('byWeekday'), s.breakdown.weekday, (g) => I18N[lang].weekdays[g.key] ?? g.key));
+  cards.push(barCard(t('byWeekday'), s.breakdown.weekday, (g) => tObj('weekdays')[g.key] ?? g.key));
   if (s.breakdown.hour.length) cards.push(barCard(t('byHour'), s.breakdown.hour));
   $('#breakdowns').innerHTML = cards.join('');
 }
@@ -496,7 +469,7 @@ async function renderSession(app, id) {
 function renderStrategies(app) {
   if (!meta.strategies.length) { app.innerHTML = onboardingHtml(); return; }
   app.innerHTML = meta.strategies.map(s => {
-    const planRows = Object.entries(s.plan ?? {}).map(([k, v]) => `<dt>${esc(I18N[lang].planKeys[k] ?? k)}</dt><dd>${esc(v)}</dd>`).join('');
+    const planRows = Object.entries(s.plan ?? {}).map(([k, v]) => `<dt>${esc(tObj('planKeys')[k] ?? k)}</dt><dd>${esc(v)}</dd>`).join('');
     const fields = s.fields.filter(f => !f.archived);
     const rules = s.rules.filter(r => !r.archived);
     return `<div class="card strategy-card">
@@ -519,16 +492,21 @@ function renderStrategies(app) {
 function applyChrome() {
   document.documentElement.lang = lang;
   document.querySelectorAll('nav .tab[data-view]').forEach(b => { b.textContent = t(b.dataset.view); b.onclick = () => setHash(b.dataset.view); });
-  $('#lang-btn').textContent = t('switchTo');
+  const codes = Object.keys(I18N), next = codes[(codes.indexOf(lang) + 1) % codes.length];
+  $('#lang-btn').style.display = codes.length > 1 ? '' : 'none';
+  $('#lang-btn').textContent = next.toUpperCase();
+  $('#lang-btn').title = I18N[next]._name ?? next;
   const p = meta?.profile ?? {};
   $('#profile-line').textContent = [p.markets, p.style].filter(Boolean).join(' · ');
 }
-$('#lang-btn').onclick = () => { lang = lang === 'en' ? 'vi' : 'en'; try { localStorage.setItem('atj-lang', lang); } catch {} applyChrome(); route(); };
+$('#lang-btn').onclick = () => { const codes = Object.keys(I18N); lang = codes[(codes.indexOf(lang) + 1) % codes.length]; try { localStorage.setItem('atj-lang', lang); } catch {} applyChrome(); route(); };
 window.addEventListener('hashchange', route);
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(route, 200); });
 
 (async () => {
+  try { Object.assign(I18N, await api('/api/locales')); } catch { /* English only */ }
+  lang = pickLang();
   meta = await api('/api/meta');
   applyChrome();
   route();

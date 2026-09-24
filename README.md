@@ -92,6 +92,7 @@ MCP prompts (slash commands in clients that support them): `onboarding`, `log_tr
 | `JOURNAL_DB`, `JOURNAL_SCREENSHOTS` | inside the data dir | override either path |
 | `JOURNAL_PORT` | `3777` | dashboard port (binds to `127.0.0.1` only) |
 | `JOURNAL_WEB` | unset | `1` = start the dashboard together with the MCP server |
+| `JOURNAL_LOCALES_DIR` | `<data dir>/locales` | extra dashboard languages as `<code>.json` ([docs/locales.md](docs/locales.md)) |
 
 Back up by copying the data dir. `run_sql_readonly` and the SQLite file are yours to query.
 

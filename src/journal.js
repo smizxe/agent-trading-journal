@@ -9,7 +9,10 @@ const fail = (msg) => { throw new JournalError(msg); };
 
 const json = (v) => (v === undefined || v === null ? null : JSON.stringify(v));
 const parse = (s, fallback = null) => { if (!s) return fallback; try { return JSON.parse(s); } catch { return fallback; } };
-const slugify = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd')
+// Letters that Unicode NFD doesn't decompose into base + accent.
+const EXTRA_LATIN = { 'đ': 'd', 'ł': 'l', 'ø': 'o', 'ß': 'ss', 'æ': 'ae', 'œ': 'oe', 'þ': 'th' };
+const slugify = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/[đłøßæœþ]/g, c => EXTRA_LATIN[c])
   .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
 const TRADE_DATE = `COALESCE(substr(t.chart_time, 1, 10), s.date)`;
 
@@ -246,8 +249,8 @@ export function validateFields(meta, values) {
       out[f.key] = opt.value;
     } else if (f.type === 'bool') {
       const s = String(v).toLowerCase();
-      if (['true', '1', 'yes', 'y', 'có', 'co'].includes(s)) out[f.key] = true;
-      else if (['false', '0', 'no', 'n', 'không', 'khong'].includes(s)) out[f.key] = false;
+      if (['true', '1', 'yes', 'y'].includes(s)) out[f.key] = true;
+      else if (['false', '0', 'no', 'n'].includes(s)) out[f.key] = false;
       else fail(`field "${f.key}" expects true/false, got "${v}"`);
     } else if (f.type === 'number') {
       const n = Number(v);

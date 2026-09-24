@@ -11,6 +11,7 @@ export const APP_DIR = path.resolve(__dirname, '..');
  * Where data lives. Resolved on every call so tests and the CLI can switch it via env.
  * - JOURNAL_DATA_DIR: folder holding journal.db + screenshots/ (default ~/.agent-trading-journal)
  * - JOURNAL_DB / JOURNAL_SCREENSHOTS: override either path individually
+ * - JOURNAL_LOCALES_DIR: extra dashboard languages as <code>.json (default <data dir>/locales)
  */
 export function paths() {
   const dataDir = process.env.JOURNAL_DATA_DIR || path.join(os.homedir(), '.agent-trading-journal');
@@ -18,6 +19,7 @@ export function paths() {
     dataDir,
     db: process.env.JOURNAL_DB || path.join(dataDir, 'journal.db'),
     screenshots: process.env.JOURNAL_SCREENSHOTS || path.join(dataDir, 'screenshots'),
+    locales: process.env.JOURNAL_LOCALES_DIR || path.join(dataDir, 'locales'),
   };
 }
 

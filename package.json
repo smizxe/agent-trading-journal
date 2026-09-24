@@ -27,7 +27,7 @@
     "LICENSE",
     "docs/ONBOARDING.md",
     "docs/edge-score.md",
-    "README.vi.md"
+    "docs/locales.md"
   ],
   "engines": {
     "node": ">=22"

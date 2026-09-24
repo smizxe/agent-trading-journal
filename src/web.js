@@ -38,6 +38,7 @@ function buildApp() {
   app.get('/api/trades', (c) => send(c, J.queryTrades(db, { ...filtersFrom(c.req.query()), limit: 500 })));
   app.get('/api/trades/:id', (c) => send(c, J.getTrade(db, Number(c.req.param('id')))));
   app.get('/api/lessons', (c) => send(c, J.listLessons(db, filtersFrom(c.req.query()))));
+  app.get('/api/locales', (c) => send(c, loadLocales()));
   app.get('/api/risk', (c) => send(c, checkRisk(db, c.req.query('account'), c.req.query('date') || undefined)));
   app.get('/screenshots/:file', (c) => {
     const file = path.basename(c.req.param('file'));
@@ -47,6 +48,21 @@ function buildApp() {
     return c.body(fs.readFileSync(full), 200, { 'Content-Type': type });
   });
   return app;
+}
+
+/** Extra UI languages: every <code>.json in the locales dir (English is built into the page). Bad files are skipped. */
+function loadLocales() {
+  const dir = paths().locales, out = {};
+  if (!fs.existsSync(dir)) return out;
+  for (const f of fs.readdirSync(dir)) {
+    const code = path.basename(f, '.json');
+    if (!f.endsWith('.json') || !/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(code) || code === 'en') continue;
+    try {
+      const dict = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+      if (dict && typeof dict === 'object' && !Array.isArray(dict)) out[code] = dict;
+    } catch { /* ignore malformed locale */ }
+  }
+  return out;
 }
 
 let running = null;

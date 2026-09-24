@@ -74,6 +74,9 @@ test('agent logs trades with fields + rules; errors come back as tool errors', a
 
 test('dashboard: off by default, starts on request, serves API', async () => {
   assert.equal((await call('dashboard_status')).running, false);
+  fs.mkdirSync(path.join(tmp, 'locales'), { recursive: true });
+  fs.writeFileSync(path.join(tmp, 'locales', 'de.json'), JSON.stringify({ _name: 'Deutsch', overview: 'Übersicht' }));
+  fs.writeFileSync(path.join(tmp, 'locales', 'xx.json'), '{ not json');
   const started = await call('start_dashboard');
   assert.equal(started.url, `http://localhost:${PORT}`);
   const html = await (await fetch(`http://127.0.0.1:${PORT}/`)).text();
@@ -82,6 +85,9 @@ test('dashboard: off by default, starts on request, serves API', async () => {
   assert.equal(meta.strategies[0].slug, 'my-pullback');
   const stats = await (await fetch(`http://127.0.0.1:${PORT}/api/stats?strategy=my-pullback`)).json();
   assert.equal(stats.total_r, 4);
+  const locales = await (await fetch(`http://127.0.0.1:${PORT}/api/locales`)).json();
+  assert.deepEqual(Object.keys(locales), ['de']);
+  assert.equal(locales.de.overview, 'Übersicht');
   const bad = await fetch(`http://127.0.0.1:${PORT}/api/stats?strategy=nope`);
   assert.equal(bad.status, 400);
   assert.equal((await fetch(`http://127.0.0.1:${PORT}/screenshots/..%2Fjournal.db`)).status, 404);

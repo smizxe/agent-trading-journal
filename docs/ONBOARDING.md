@@ -25,7 +25,7 @@ Ask, grouped over 2–3 messages:
 
 | Profile key | Question | Example answers |
 |---|---|---|
-| `language` | Which language should we use? | English / Español / Tiếng Việt |
+| `language` | Which language should we use? | English / Español / Deutsch |
 | `markets` | What do you trade? | EURUSD, GBPJPY / NQ futures / BTC perps / US stocks |
 | `style` | How long do you usually hold a trade? | scalp (minutes) / intraday (hours) / swing (days) |
 | `sessions` | When do you trade, and in which timezone? | New York open, 9:30–11:30, US Eastern |
